@@ -160,6 +160,9 @@ unsigned int maxwraplength = 0;
 /* programming and for which we set d_range */
 /* by hand */
 
+#define PRUNEMAXPERIOD 10 /* with MaxPeriod at most this, only candidate */
+/* distances up to SMALLDISTANCE are tested; see newtupbo() */
+
 int Min_Distance_Entries = 20; /* minimum number of places to store a tuple
                                 match.  Usually this is the same as the
                                 distance, but for small distances, we
@@ -358,6 +361,7 @@ typedef struct {
     unsigned int flankinglength;
     int          HTMLoff;
     int          redundoff;
+    int          noprune;
     int          ngs;
     int          use_stdin;
     unsigned int maxwraplength;
