@@ -49,6 +49,7 @@ const char *usage = "\n\nPlease use: %s File Match Mismatch Delta PM PI Minscore
 "\n        -d        data file"
 "\n        -h        suppress html output"
 "\n        -r        no redundancy elimination"
+"\n        -noprune  with MaxPeriod <= 10, also test candidate periods above 20 (slower)"
 "\n        -l <n>    maximum TR length expected (in millions) (eg, -l 3 or -l=3 for 3 million)"
 "\n                  Human genome HG38 would need -l 6"
 #if (defined(UNIXGUI)+defined(UNIXCONSOLE))>=1
@@ -104,6 +105,7 @@ int main(int ac, char** av)
 	paramset.flankinglength = 500; /* Currently not user-configurable */
 	paramset.HTMLoff = 0;
 	paramset.redundoff = 0;
+	paramset.noprune = 0;
 	paramset.maxwraplength = 2000000;
 	paramset.ngs = 0; /* this is for unix systems only */
 	paramset.guihandle=0;
@@ -122,6 +124,7 @@ int main(int ac, char** av)
 			{"flank",    no_argument, &paramset.flankingsequence, 1}, /* -f, -F */
 			{"html-off",    no_argument, &paramset.HTMLoff, 1}, /* -h, -H */
 			{"redund-off",    no_argument, &paramset.redundoff, 1}, /* -r, -R */
+			{"noprune",    no_argument, &paramset.noprune, 1}, /* -noprune */
 #if (defined(UNIXGUI)+defined(UNIXCONSOLE))>=1
 			{"ngs",   no_argument, &paramset.ngs, 1}, /* -ngs */
 			{"Ngs",   no_argument, &paramset.ngs, 1}, /* -Ngs */

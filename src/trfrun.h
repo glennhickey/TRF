@@ -104,6 +104,14 @@ void    FreeList(IL * headptr);
 // (added by Eugene Scherba, 2010-02-16)
 #define MEMBLOCK (10*1024*1024)
 
+// reading the sequence a character at a time, without locking the stream
+// each time where that is available
+#if defined(__unix__) || defined(__APPLE__)
+#define SEQGETC(fp) getc_unlocked(fp)
+#else
+#define SEQGETC(fp) getc(fp)
+#endif
+
 
 int LoadSequenceFromFileEugene(FASTASEQUENCE *pseq,FILE* fp); /* may use stdin and better file reading for handling large files over 2GB */
 int LoadSequenceFromFileBenson(FASTASEQUENCE *pseq,FILE* fp); /* old function, uses filepos, 32bit version of this would not process a file over 2GB properly */
@@ -1216,7 +1224,7 @@ int LoadSequenceFromFileEugene(FASTASEQUENCE *pseq, FILE* fp)
 		}
 		pseq->sequence = ptemp;
 		for(i = j; i < j + MEMBLOCK;) {
-			c = getc(fp);			// get a character from file
+			c = SEQGETC(fp);			// get a character from file
 			if ((char)c >= 'A' && (char)c <= 'Z') { // in upper-case range of alpha characters
 				pseq->sequence[i] = (char)c;
 				pseq->composition[c - (int)'A']++;

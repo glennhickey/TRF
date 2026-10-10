@@ -143,7 +143,7 @@ if(*pcurr>=maxscore)\
 	if(*pcurr>maxrowscore)\
 {\
 	maxrowscore=*pcurr;\
-	if((*pcurr==*pdiag)&&(match_yes_no==Alpha))\
+	if((*pcurr==*pdiag)&&(match_yes_no==alpha))\
 	matchatmax_col=c;\
 	else matchatmax_col=-2;\
 }
@@ -190,6 +190,9 @@ void narrowbandwrap(int start, int size,int bandradius, int bandradiusforward,
 	int mincolbandcenter,zeroat,mincolposition;
 	/* Feb 16, 2016 Yozen */
 	unsigned int r;
+	/* locals so the compiler need not reload globals that stores through pcurr might alias */
+	int alpha=Alpha;
+	int *smrow;
 
 	/* G. Benson */
 	/* 1/26/10 */
@@ -266,6 +269,7 @@ void narrowbandwrap(int start, int size,int bandradius, int bandradiusforward,
 		lastmatchatmax_col=matchatmax_col;
 		end_of_trace=TRUE;
 		currchar=Sequence[realr];
+		smrow=&SM[256*currchar];
 		pcurr=&S[r][2*w];
 		pleft=-1000;
 
@@ -294,29 +298,29 @@ void narrowbandwrap(int start, int size,int bandradius, int bandradiusforward,
 			pup=&Up[2*w-k];
 			for(i=2*w;i>=k;i--)
 			{
-				*pdiag+=(match_yes_no=match(currchar,EC[c]));
+				*pdiag+=(match_yes_no=smrow[EC[c]]);
 				pleft=(*pcurr=max4(0,*pdiag,*pup,pleft))+Delta;
 				test_trace_and_backwards_maxscore;
 				test_maxrowscore_with_match;
 				pcurr--;
 				pdiag--;
 				pup--;
-				c=(c-1+size)%size;
+				c=(c==0)?size-1:c-1;
 			}
 			i=k-1;
-			*pdiag+=(match_yes_no=match(currchar,EC[c]));
+			*pdiag+=(match_yes_no=smrow[EC[c]]);
 			pleft=(*pcurr=max3(0,*pdiag,pleft))+Delta;
 			test_trace_and_backwards_maxscore;
 			test_maxrowscore_with_match;
 			pcurr--;
-			c=(c-1+size)%size;
+			c=(c==0)?size-1:c-1;
 			for(i=k-2;i>=0;i--)
 			{
 				pleft=(*pcurr=max2(0,pleft))+Delta;
 				test_trace_and_backwards_maxscore;
 				test_maxrowscore_without_match;
 				pcurr--;
-				c=(c-1+size)%size;
+				c=(c==0)?size-1:c-1;
 			}
 		}
 		else            /* band shifts right */
@@ -329,7 +333,7 @@ void narrowbandwrap(int start, int size,int bandradius, int bandradiusforward,
 				test_trace_and_backwards_maxscore;
 				test_maxrowscore_without_match;
 				pcurr--;
-				c=(c-1+size)%size;
+				c=(c==0)?size-1:c-1;
 			}
 			i=2*w-k;
 			pleft=(*pcurr=max3(0,*pup,pleft))+Delta;
@@ -337,17 +341,17 @@ void narrowbandwrap(int start, int size,int bandradius, int bandradiusforward,
 			test_maxrowscore_without_match;
 			pcurr--;
 			pup--;
-			c=(c-1+size)%size;
+			c=(c==0)?size-1:c-1;
 			for(i=2*w-k-1;i>=0;i--)
 			{
-				*pdiag+=(match_yes_no=match(currchar,EC[c]));
+				*pdiag+=(match_yes_no=smrow[EC[c]]);
 				pleft=(*pcurr=max4(0,*pdiag,*pup,pleft))+Delta;
 				test_trace_and_backwards_maxscore;
 				test_maxrowscore_with_match;
 				pcurr--;
 				pdiag--;
 				pup--;
-				c=(c-1+size)%size;
+				c=(c==0)?size-1:c-1;
 			}
 		}
 		pcurr=&S[r][0];
@@ -452,6 +456,7 @@ void narrowbandwrap(int start, int size,int bandradius, int bandradiusforward,
 			maxrowscore=-1;
 			lastmatchatmax_col=matchatmax_col;
 			currchar=Sequence[realr];
+			smrow=&SM[256*currchar];
 			pcurr=&S[r][0];
 			pleft=-1000;      /* don't use pleft for first entry */   
 
@@ -479,29 +484,29 @@ void narrowbandwrap(int start, int size,int bandradius, int bandradiusforward,
 				c=(Bandcenter[r]-w+size)%size;
 				for(i=0;i<=2*w-k;i++)
 				{
-					*pdiag+=(match_yes_no=match(currchar,EC[c]));
+					*pdiag+=(match_yes_no=smrow[EC[c]]);
 					pleft=(*pcurr=max4(0,*pdiag,*pup,pleft))+Delta;
 					test_trace_and_forward_maxscore;
 					test_maxrowscore_with_match;
 					pcurr++;
 					pdiag++;
 					pup++;
-					c=(c+1)%size;
+					c=(c==size-1)?0:c+1;
 				}
 				i=2*w-k+1;
-				*pdiag+=(match_yes_no=match(currchar,EC[c]));
+				*pdiag+=(match_yes_no=smrow[EC[c]]);
 				pleft=(*pcurr=max3(0,*pdiag,pleft))+Delta;
 				test_trace_and_forward_maxscore;
 				test_maxrowscore_with_match;
 				pcurr++;
-				c=(c+1)%size; 
+				c=(c==size-1)?0:c+1;
 				for(i=2*w-k+2;i<=2*w;i++)
 				{
 					pleft=(*pcurr=max2(0,pleft))+Delta;
 					test_trace_and_forward_maxscore;
 					test_maxrowscore_without_match;
 					pcurr++;
-					c=(c+1)%size;
+					c=(c==size-1)?0:c+1;
 				}
 			}
 			else          /* band shifts left */
@@ -516,7 +521,7 @@ void narrowbandwrap(int start, int size,int bandradius, int bandradiusforward,
 					test_trace_and_forward_maxscore;
 					test_maxrowscore_without_match;
 					pcurr++;
-					c=(c+1)%size;
+					c=(c==size-1)?0:c+1;
 				}
 				i=k;
 				pleft=(*pcurr=max3(0,*pup,pleft))+Delta;
@@ -524,17 +529,17 @@ void narrowbandwrap(int start, int size,int bandradius, int bandradiusforward,
 				test_maxrowscore_without_match;
 				pcurr++;
 				pup++;
-				c=(c+1)%size;
+				c=(c==size-1)?0:c+1;
 				for(i=k+1;i<=2*w;i++)
 				{
-					*pdiag+=(match_yes_no=match(currchar,EC[c]));
+					*pdiag+=(match_yes_no=smrow[EC[c]]);
 					pleft=(*pcurr=max4(0,*pdiag,*pup,pleft))+Delta;
 					test_trace_and_forward_maxscore;
 					test_maxrowscore_with_match;
 					pcurr++;
 					pdiag++;
 					pup++;
-					c=(c+1)%size;
+					c=(c==size-1)?0:c+1;
 				}
 			}
 			pcurr=&S[r][0];
@@ -596,6 +601,123 @@ matchatmax_col=-2;
 
 
 
+/* Rows of newwrap() are computed WRAPLANES cells at a time with the vector
+   extensions of GCC and Clang (SSE2 on x86-64, NEON on ARM), else, or with
+   TRF_NO_VECTORS defined, one cell at a time.  Rows are padded to whole
+   vectors; cells past size are padding. */
+#define WRAPLANES 4
+#define WRAPVECS ((MAXBANDWIDTH+WRAPLANES)/WRAPLANES)
+#define WRAPPAD (-536870912) /* low enough that padding never wins a max */
+#if defined(__GNUC__) && !defined(TRF_NO_VECTORS)
+#define WRAPVECTORS 1
+#define WRAPINLINE inline __attribute__((always_inline))
+typedef int wrapvec __attribute__((vector_size(16)));
+#if defined(__clang__)
+#define WRAPSHUF(a,b,i0,i1,i2,i3) __builtin_shufflevector((a),(b),i0,i1,i2,i3)
+#else
+#define WRAPSHUF(a,b,i0,i1,i2,i3) __builtin_shuffle((a),(b),(wrapvec){i0,i1,i2,i3})
+#endif
+static inline wrapvec wrapvecmax(wrapvec a, wrapvec b)
+{
+	wrapvec m=(a>b);
+	return (a&m)|(b&~m);
+}
+#else
+#define WRAPVECTORS 0
+#define WRAPINLINE inline
+typedef struct { int lane[WRAPLANES]; } wrapvec;
+#endif
+
+/* One row of newwrap()'s wraparound alignment, with the cells in scan order.
+   newwrap() used to compute a row in two passes along it, each cell being
+   max(0,diag,up,left), diag the previous row's cell before it (before the
+   first, its last) plus the match score, and left the cell before it plus
+   delta; the first pass starts with left=delta and only gives the left that
+   wraps around into the second.  Written out, that left is the largest of
+   t+(size-c)*delta over the cells, t being max(0,diag,up), and of
+   (size+1)*delta.  The second pass then is the scan v=max(t,left).  A cell
+   of 0 is replaced by -1000 when zeroable, which leaves the rest of the row
+   as it was, since delta<=0.  Returns the largest value in the row, after
+   replacement, and sets *alltrace if every cell was replaced (the end of the
+   trace). */
+static WRAPINLINE int wraprow(int size, int delta, const wrapvec *mrow, const wrapvec *wrapw,
+		const wrapvec *prev, wrapvec *cell, wrapvec *up, int zeroable, int *alltrace)
+{
+	int left,vmax;
+#if WRAPVECTORS
+	int k,nv,last,inlast;
+	wrapvec d,t,v,pv,leftv,vmaxv,zv,lastmask;
+	const wrapvec zero={0,0,0,0}, stop={-1000,-1000,-1000,-1000},
+	      low={WRAPPAD,WRAPPAD,WRAPPAD,WRAPPAD};
+	wrapvec delta1={delta,delta,delta,delta}, delta2=delta1+delta1,
+		ramp={0,delta,2*delta,3*delta},
+		zeromask={-zeroable,-zeroable,-zeroable,-zeroable};
+
+	nv=(size+WRAPLANES-1)/WRAPLANES;
+	/* the cells of the row in its last vector; the rest are padding */
+	inlast=size-(nv-1)*WRAPLANES;
+	lastmask=(wrapvec){(0<inlast)?-1:0,(1<inlast)?-1:0,(2<inlast)?-1:0,(3<inlast)?-1:0};
+	last=((const int*)prev)[size-1];
+	pv=(wrapvec){last,last,last,last};
+	left=(size+1)*delta;
+	leftv=(wrapvec){left,left,left,left};
+	for(k=0;k<nv;k++)
+	{
+		d=WRAPSHUF(pv,prev[k],3,4,5,6)+mrow[k];
+		pv=prev[k];
+		t=wrapvecmax(wrapvecmax(d,zero),up[k]);
+		cell[k]=t;
+		leftv=wrapvecmax(leftv,t+wrapw[k]);
+	}
+	leftv=wrapvecmax(leftv,WRAPSHUF(leftv,leftv,2,3,0,1));
+	leftv=wrapvecmax(leftv,WRAPSHUF(leftv,leftv,1,0,3,2));
+
+	/* the scan, within each vector in two steps, then across them */
+	vmaxv=zero;
+	for(k=0;k<nv;k++)
+	{
+		v=cell[k];
+		v=wrapvecmax(v,WRAPSHUF(v,low,4,0,1,2)+delta1);
+		v=wrapvecmax(v,WRAPSHUF(v,low,4,5,0,1)+delta2);
+		v=wrapvecmax(v,leftv+ramp);
+		leftv=WRAPSHUF(v,v,3,3,3,3)+delta1;
+		if(k==nv-1) v&=lastmask;
+		vmaxv=wrapvecmax(vmaxv,v);
+		zv=(v==zero)&zeromask;
+		up[k]=(zv&stop)|(~zv&(v+delta1));
+		cell[k]=(zv&stop)|(~zv&v);
+	}
+	vmaxv=wrapvecmax(vmaxv,WRAPSHUF(vmaxv,vmaxv,2,3,0,1));
+	vmaxv=wrapvecmax(vmaxv,WRAPSHUF(vmaxv,vmaxv,1,0,3,2));
+	vmax=vmaxv[0];
+#else
+	int c,t,z;
+	const int *p=(const int*)prev, *m=(const int*)mrow, *w=(const int*)wrapw;
+	int *cl=(int*)cell, *u=(int*)up;
+
+	left=(size+1)*delta;
+	for(c=0;c<size;c++)
+	{
+		t=max2(max2(0,p[(c>0)?c-1:size-1]+m[c]),u[c]);
+		cl[c]=t;
+		left=max2(left,t+w[c]);
+	}
+	vmax=0;
+	for(c=0;c<size;c++)
+	{
+		left=max2(cl[c],left);
+		vmax=max2(vmax,left);
+		z=zeroable&&(left==0);
+		u[c]=z?-1000:left+delta;
+		cl[c]=z?-1000:left;
+		left+=delta;
+	}
+#endif
+
+	*alltrace=zeroable&&(vmax==0);
+	return (*alltrace)?-1000:vmax;
+}
+
 /*******************************************************************/
 
 /***************************** newwrap()  **************************/
@@ -603,14 +725,42 @@ matchatmax_col=-2;
 /*******************************************************************/
 void newwrap(int start, int size, int consensuspresent)
 
+/* size is at most SMALLDISTANCE here.  The rows are computed by wraprow();
+   the backward pass runs it over the pattern reversed.  Only the last pass,
+   which the trace back reads, fills S. */
 {
-	int g;
-	register int *pup, *pdiag, *pcurr,pleft;
-	int adjlength,adjmone,c,realr,end_of_trace,
-	    maxscore,minrow,maxrow,maxcol,modstart,maxrealrow;
+	int g,b;
+	int delta,rowmax,ncells;
+	long rows=0; /* added to Rows at the end; stores could alias Rows */
+	int c,realr,end_of_trace,
+	    maxscore,minrow,maxrow,maxcol,modstart,maxrealrow,traceend;
+	wrapvec rowbuf[2][WRAPVECS], upbuf[WRAPVECS], wrapwbuf[WRAPVECS];
+	/* match scores of A, C, G, T and anything else against the pattern */
+	wrapvec mtabbuf[5][WRAPVECS];
+	wrapvec *prev, *cell, *swap;
+	int *up, *wrapw, *mtab[5];
+	static const char bases[5]={'A','C','G','T','N'};
+	static int baseindex[256];
+	static int baseindexready=0;
 	char currchar;
 	/* Feb 16, 2016 Yozen */
 	unsigned int r;
+
+	if(!baseindexready)
+	{
+		for(g=0;g<256;g++) baseindex[g]=4;
+		baseindex['A']=0;
+		baseindex['C']=1;
+		baseindex['G']=2;
+		baseindex['T']=3;
+		baseindexready=1;
+	}
+
+	delta=Delta;
+	ncells=((size+WRAPLANES-1)/WRAPLANES)*WRAPLANES;
+	up=(int*)upbuf;
+	wrapw=(int*)wrapwbuf;
+	for(b=0;b<5;b++) mtab[b]=(int*)mtabbuf[b];
 
 	/* fill EC */
 	if(consensuspresent)
@@ -618,24 +768,29 @@ void newwrap(int start, int size, int consensuspresent)
 	else
 		for(g=0;g<size;g++) EC[g]=Sequence[start-size+g+1];
 
+	for(c=0;c<ncells;c++)
+	{
+		wrapw[c]=(c<size)?(size-c)*delta:WRAPPAD;
+		for(b=0;b<5;b++) mtab[b][c]=0;
+	}
 
-	/* backward wdp */
+
+	/* backward wdp, which scans the pattern from its end */
+	for(b=0;b<5;b++)
+		for(c=0;c<size;c++) mtab[b][c]=match(bases[b],EC[size-1-c]);
+
 	maxscore=0;
 	realr=start+1;
 	r=maxwraplength;
 
-	adjlength=size-1;
-	adjmone=adjlength-1;
-	pup=Up;
-	pdiag=Diag;
-	pcurr=&S[r][0];
+	traceend=start-max(size,Min_Distance_Window);
 
-	for (c=0;c<size;c++)
+	prev=rowbuf[0];
+	cell=rowbuf[1];
+	for (c=0;c<ncells;c++)
 	{
-		*pup=(*pdiag=(*pcurr=maxscore))+ Delta;
-		pup++;
-		pdiag++;
-		pcurr++;
+		((int*)prev)[c]=maxscore;
+		up[c]=maxscore+delta;
 	}
 	/* backwards */
 	end_of_trace=FALSE;  
@@ -643,146 +798,32 @@ void newwrap(int start, int size, int consensuspresent)
 	{
 		r--;
 		realr--;
-		Rows++;
+		rows++;
 		currchar=Sequence[realr];
 
-		pcurr=&S[r][adjlength];
-		pleft=Delta;        /* first pass. set S[r][0]=0 */
-		pdiag=&Diag[adjlength];
-		pup=&Up[adjlength];
-		for (c=adjlength;c>=0;c--)
+		/* a cell of 0 here becomes -1000: if (*pcurr==0) doesn't work with consensus */
+		rowmax=wraprow(size,delta,mtabbuf[baseindex[(unsigned char)currchar]],wrapwbuf,
+				prev,cell,upbuf,(realr<=traceend),&end_of_trace);
+
+		/* 3/14/05 gary benson -- made >= to extend alignments as far as possible */ 
+		if (rowmax>=maxscore)  /* test for maximum */
 		{
-			*pdiag+=match(currchar,EC[c]);
-			pleft=(*pcurr=max4(0,*pdiag,*pup,pleft))+Delta;
-			pcurr--;
-			pdiag--;
-			pup--;
+			maxscore=rowmax;
+			minrow=realr;
 		}
-
-		end_of_trace=TRUE;      /* setup for encountering a break in the trace */
-		/*second pass */
-		pcurr=&S[r][adjlength];
-		/* pleft set from first pass */
-		pdiag=&Diag[adjlength];
-		pup=&Up[adjlength];
-		for (c=adjlength;c>=0;c--)
-		{
-			*pup=(pleft=(*pcurr=max4(0,*pdiag,*pup,pleft))+Delta);
-			if((realr<=start-max(size,Min_Distance_Window))&&(*pcurr==0)) 
-				/* if (*pcurr==0) doesn't work with consensus */
-				*pup=pleft=*pcurr=-1000;
-			else
-				end_of_trace=FALSE;
-
-
-			/* 3/14/05 gary benson -- made >= to extend alignments as far as possible */ 
-			if (*pcurr>=maxscore)  /* test for maximum */
-			{
-				maxscore=*pcurr;
-				minrow=realr;
-			}
-			pcurr--;
-			pdiag--;
-			pup--;
-
-		}  
-		pcurr=&S[r][adjlength];
-		pdiag=&Diag[adjmone];
-		for (c=adjmone;c>=0;c--)
-		{
-			*pdiag=*pcurr;
-			pcurr--;
-			pdiag--;
-		}
-		Diag[adjlength]=*pcurr;
-
-
+		swap=prev; prev=cell; cell=swap;
 	}
 	/***********************************/
-	r=0;
-	realr=start-1;
-
-	pup=Up;
-	pdiag=&Diag[0];
-	pcurr=&S[r][0];
-
-	/* initialize_scoring_array top row (*pcurr)*/
-	/* initialize diagonal branch (*pdiag) and up branch (*pup) */
-	for (c=0;c<size;c++)
-	{
-		*pup=(*pdiag=(*pcurr=maxscore))+ Delta;
-		pup++;
-		pdiag++;
-		pcurr++;
-	}
-
-	end_of_trace=FALSE;  
-	while ((!end_of_trace) && (realr<Length) && (r<maxwraplength))
-	{
-		r++;
-		realr++;
-		Rows++;
-		currchar=Sequence[realr];
-
-		pcurr=&S[r][0];
-		pleft=Delta;        /* first pass. S[r][adjlength]=0  */
-		pdiag=&Diag[0];
-		pup=&Up[0];
-		for (c=0;c<size;c++)
-		{
-			*pdiag+=match(currchar,EC[c]);
-			pleft=(*pcurr=max4(0,*pdiag,*pup,pleft))+Delta;
-			pcurr++;
-			pdiag++;
-			pup++;
-		}
-		end_of_trace=TRUE;      /* setup for encountering a break in the trace */
-		/*second pass */
-		pcurr=&S[r][0];
-		/* pleft set from first pass */
-		pdiag=&Diag[0];
-		pup=&Up[0];
-		for (c=0;c<size;c++)
-		{
-			*pup=(pleft=(*pcurr=max4(0,*pdiag,*pup,pleft))+Delta);
-			if((realr>=start)&&(*pcurr==0))
-				/* if (*pcurr==0) doesn't work with consensus */
-				*pup=pleft=*pcurr=-1000;
-			else
-				end_of_trace=FALSE;
-
-
-			/* 3/14/05 gary benson -- made >= to extend alignments as far as possible */ 
-			if (*pcurr>=maxscore)  /* test for maximum */
-			{
-				maxscore=*pcurr;
-				maxrow=realr;       /* ??? do we need this? */
-			}
-			pcurr++;
-			pdiag++;
-			pup++;
-
-		}  
-		pcurr=&S[r][0];
-		pdiag=&Diag[1];
-		for (c=0;c<size;c++)
-		{
-			*pdiag=*pcurr;
-			pcurr++;
-			pdiag++;
-		}
-		Diag[0]=Diag[size];
-
-	}    
-
-	/* store last position scanned with this pattern */
-
-	Wrapend=realr;
+	/* The forward scan from start that used to follow only set Wrapend, which
+	   nothing reads, and maxrow, which the pass below always sets again: that
+	   pass covers the pattern itself, so its best score is above zero. */
 
 	/* redo for an accurate alignment if score is big enough to report */
 	Reportmin=0;
 	if (maxscore>=Reportmin)
 	{
+		for(b=0;b<5;b++)
+			for(c=0;c<size;c++) mtab[b][c]=match(bases[b],EC[c]);
 
 		r=0;
 		modstart=start+1;
@@ -792,18 +833,14 @@ void newwrap(int start, int size, int consensuspresent)
 		/* maxscore in every column */
 		maxscore=0;
 		/****/
-		pup=Up;
-		pdiag=&Diag[0];
-		pcurr=&S[r][0];
 
-		/* initialize_scoring_array top row (*pcurr)*/
-		/* initialize diagonal branch (*pdiag) and up branch (*pup) */
-		for (c=0;c<size;c++)
+		/* initialize_scoring_array top row (S[0])*/
+		/* initialize diagonal branch (prev) and up branch (up) */
+		for (c=0;c<size;c++) S[r][c]=maxscore;
+		for (c=0;c<ncells;c++)
 		{
-			*pup=(*pdiag=(*pcurr=maxscore))+ Delta;
-			pup++;
-			pdiag++;
-			pcurr++;
+			((int*)prev)[c]=maxscore;
+			up[c]=maxscore+delta;
 		}
 
 		end_of_trace=FALSE;  
@@ -811,60 +848,27 @@ void newwrap(int start, int size, int consensuspresent)
 		{
 			r++;
 			realr++;
-			Rows++;
+			rows++;
 			currchar=Sequence[realr];
 
-			pcurr=&S[r][0];
-			pleft=Delta;      /* first pass. S[r][adjlength]=0  */
-			pdiag=&Diag[0];
-			pup=&Up[0];
-			for (c=0;c<size;c++)
-			{
-				*pdiag+=match(currchar,EC[c]);
-				pleft=(*pcurr=max4(0,*pdiag,*pup,pleft))+Delta;
-				pcurr++;
-				pdiag++;
-				pup++;
-			}
-			end_of_trace=TRUE;    /* setup for encountering a break in the trace */
-			/*second pass */
-			pcurr=&S[r][0];
-			/* pleft set from first pass */
-			pdiag=&Diag[0];
-			pup=&Up[0];
-			for (c=0;c<size;c++)
-			{
-				*pup=(pleft=(*pcurr=max4(0,*pdiag,*pup,pleft))+Delta);
-				if ((realr>=modstart)
-						&&(*pcurr==0))
-				{*pup=pleft=*pcurr=-1000;}
-				else
-					end_of_trace=FALSE;
+			rowmax=wraprow(size,delta,mtabbuf[baseindex[(unsigned char)currchar]],wrapwbuf,
+					prev,cell,upbuf,(realr>=modstart),&end_of_trace);
+			/* whole vectors; S rows are wider than any pattern here */
+			for(c=0;c<ncells;c+=WRAPLANES) memcpy(&S[r][c],((int*)cell)+c,sizeof(wrapvec));
 
-				if (*pcurr>maxscore)    /* test for maximum */
-				{
-					maxscore=*pcurr;
-					maxrealrow=realr; 
-					maxrow=r;
-					maxcol=c;
-				}
-				pcurr++;
-				pdiag++;
-				pup++;
-
-			}  
-			pcurr=&S[r][0];
-			pdiag=&Diag[1];
-			for (c=0;c<size;c++)
+			if (rowmax>maxscore)    /* test for maximum, the first in the row */
 			{
-				*pdiag=*pcurr;
-				pcurr++;
-				pdiag++;
+				maxscore=rowmax;
+				maxrealrow=realr; 
+				maxrow=r;
+				for(maxcol=0;((int*)cell)[maxcol]!=rowmax;maxcol++);
 			}
-			Diag[0]=Diag[size];
+			swap=prev; prev=cell; cell=swap;
 
 		}          
 	}
+
+	Rows+=rows;
 
 	if(Criteria_print)trf_message("   DWPlength:%d",realr-(minrow-size+1)+1);
 
@@ -1553,7 +1557,8 @@ void get_pair_alignment_with_copynumber(int size)
 	si=Maxrow;
 	j=Maxcol;
 	adjlength=size-1;
-	fullcopy=(j+1)%size;
+	/* j stays within 0..size-1, so its steps wrap without % */
+	fullcopy=((j==adjlength)?0:j+1);
 
 	AlignPair.score=S[si][j]; 
 
@@ -1571,40 +1576,40 @@ void get_pair_alignment_with_copynumber(int size)
 
 		/* check match/mismatch branch */
 
-		else if (S[si][j]==S[si-1][(j+adjlength)%size]+match(x[i], y[j]))
+		else if (S[si][j]==S[si-1][((j==0)?adjlength:j-1)]+match(x[i], y[j]))
 		{
 			length++;
 			if(j==fullcopy)Copynumber++;
 			fill_align_pair(x[i],y[j],length,i,j);
 			i--;
 			si--;
-			j=(j+adjlength)%size;
+			j=((j==0)?adjlength:j-1);
 		}
 
 		/* check deletion branch */
 		else if (S[si][j]==S[si-1][j]+Delta)
 		{
 			length++;
-			fill_align_pair(x[i],'-',length,i,(j+1)%size);
+			fill_align_pair(x[i],'-',length,i,((j==adjlength)?0:j+1));
 			i--;
 			si--;
 		}
 
 		/* check other deletion branch */
-		else if (S[si][j]==S[si][(j+adjlength)%size]+Delta)
+		else if (S[si][j]==S[si][((j==0)?adjlength:j-1)]+Delta)
 		{
 			length++;
 			if(j==fullcopy)Copynumber++;
 			fill_align_pair('-',y[j],length,i+1,j);
-			j=(j+adjlength)%size;
+			j=((j==0)?adjlength:j-1);
 		}
 		else
 		{
 			trf_message("\nget_pair_alignment_with_copynumber: error in trace back");
 			trf_message("\nrow=%d  column=%d",i,j);
 			trf_message("\nS=%d  Sleft=%d  Sup=%d  Sdiag=%d  match=%d",S[si][j],
-					S[si][(j+adjlength)%size],S[si-1][j],
-					S[si-1][(j+adjlength)%size],match(x[i], y[j]));
+					S[si][((j==0)?adjlength:j-1)],S[si-1][j],
+					S[si-1][((j==0)?adjlength:j-1)],match(x[i], y[j]));
 
 			break;
 		}
@@ -2041,6 +2046,9 @@ void get_consensus(int patternlength)
 {
 	int c,lastindex,j,i,max;
 	char maxchar;
+	/* highest index the previous call may have set; the first call clears all */
+	static int dirtytop=2*(MAXPATTERNSIZECONSTANT);
+	int maxindexsecnd;
 
 	/* initialize counts */
 
@@ -2049,7 +2057,9 @@ void get_consensus(int patternlength)
 	 * is what is used to init the arrays in Consensus. Using
 	 * MAXPATTERNSIZE will result in an out-of-bounds error if > 2000.
 	 */
-	for (c=0;c<=2*(MAXPATTERNSIZECONSTANT);c++)
+	/* Only get_consensus() sets Consensus, so clearing up to dirtytop leaves
+	   it as clearing all of it would. */
+	for (c=0;c<=dirtytop;c++)
 	{
 		Consensus.A[c]=0;
 		Consensus.C[c]=0;
@@ -2064,6 +2074,9 @@ void get_consensus(int patternlength)
 	/* start consensus */
 
 	lastindex=-1;
+	maxindexsecnd=0;
+	for(i=1;i<=AlignPair.length;i++)
+		if(AlignPair.indexsecnd[i]>maxindexsecnd) maxindexsecnd=AlignPair.indexsecnd[i];
 
 	i=1;
 	while (i<=AlignPair.length)
@@ -2170,6 +2183,10 @@ void get_consensus(int patternlength)
 			j++;
 		}
 	ConsClasslength=j;
+
+	/* the counts are set up to index 2*maxindexsecnd+2, the pattern up to
+	   2*patternlength */
+	dirtytop=min(max(2*maxindexsecnd+2,2*patternlength),2*(MAXPATTERNSIZECONSTANT));
 
 }
 
@@ -2409,52 +2426,100 @@ int GetTopPeriods(unsigned char* pattern, int length, int* toparray)
 {
 	int topind;
 	double topval;
-	int heads[16];
-	int *history;
+	int bucketstart[17], bucketfill[16];
+	int *positions;
+	int *intcounts;
 	double* counts;
-	int i,t,end,tupid;
-	int curr,dist;
+	int i,j,k,t,end,tupid;
+	int dist,near,far;
+	long long windowsum,farcount,fardistsum;
 	double n,xysum,xsum,ysum,x2sum,s;
 
 	/* allocate an array of counts */
 	counts = (double*) calloc(length,sizeof(double));
 	if(counts==NULL) return 1;
 
-	/* allocate history array */
-	history = (int*) malloc(length*sizeof(int));
-	if(history==NULL)
+	/* allocate positions array */
+	positions = (int*) malloc(length*sizeof(int));
+	if(positions==NULL)
 	{
 		free(counts);
 		return 1;
 	}
 
-	/* clear the heads array which point into history array */
-	for(i=0;i<16;i++) heads[i]=-1;
+	/* integer counts are cheaper to increment; copied into counts below */
+	intcounts = (int*) calloc(length,sizeof(int));
+	if(intcounts==NULL)
+	{
+		free(counts);
+		free(positions);
+		return 1;
+	}
 
-	/* scan pattern for tuples of size 2 */
+	/* bucket the start positions of the tuples of size 2 by tuple id, each
+	   bucket in increasing order, so the earlier occurrences of a tuple are
+	   contiguous instead of a linked list to chase */
+	for(t=0;t<=16;t++) bucketstart[t]=0;
 	for(i=0,end=length-2;i<=end;i++)
 	{
-		/* figure out tuple id */
 		tupid = Index[pattern[i]]*4+Index[pattern[i+1]];
+		bucketstart[tupid+1]++;
+	}
+	for(t=1;t<=16;t++) bucketstart[t]+=bucketstart[t-1];
+	for(t=0;t<16;t++) bucketfill[t]=bucketstart[t];
+	for(i=0,end=length-2;i<=end;i++)
+	{
+		tupid = Index[pattern[i]]*4+Index[pattern[i+1]];
+		positions[bucketfill[tupid]++]=i;
+	}
 
-		/* record last occurence into history and update heads[] pointer */
-		history[i] = heads[tupid];
-		heads[tupid]=i;
-
-		/* loop into history and add distances */
-		/* 11/17/15 G. Benson */
-		/* limit maximum length of distance recorded between tuples to MAXDISTANCECONSTANT*3 = 6,000*/
-		/* this should be long enough to deter finding periods that are not the most frequent */
-		/* Without this change, this procudure is quadratic in the length, which could be several million */
-		/* and caused the program to hang with long centromeric repeats */
-		/* for(curr=i;history[curr]!=-1;curr=history[curr])*/
-		dist = 0;
-		for(curr=i;((history[curr]!=-1)&&(dist<(MAXDISTANCECONSTANT*3)));curr=history[curr])
+	/* for each tuple, add the distances back to its earlier occurrences */
+	/* 11/17/15 G. Benson */
+	/* limit maximum length of distance recorded between tuples to MAXDISTANCECONSTANT*3 = 6,000*/
+	/* this should be long enough to deter finding periods that are not the most frequent */
+	/* Without this change, this procudure is quadratic in the length, which could be several million */
+	/* and caused the program to hang with long centromeric repeats */
+	/* As before, the first distance at or beyond the limit is also counted. */
+	/* Only distances up to MAXDISTANCE are picked from below, so only those
+	   are counted one by one.  The farther ones only add to ysum and xysum,
+	   as their number and the sum of their distances: occurrences far..near-1
+	   of a bucket lie beyond MAXDISTANCE but within the limit (windowsum is
+	   the sum of their positions), and occurrence far-1 is the first at or
+	   beyond the limit.  All these sums are exact integers, so adding them
+	   after the loop below gives the same doubles as counting them in it. */
+	farcount=fardistsum=0;
+	for(t=0;t<16;t++)
+	{
+		near=far=bucketstart[t];
+		windowsum=0;
+		for(k=bucketstart[t];k<bucketstart[t+1];k++)
 		{
-			dist = i-history[curr];
-			counts[dist]+=1.0;
+			while((near<k)&&(positions[k]-positions[near]>MAXDISTANCE))
+			{
+				windowsum+=positions[near];
+				near++;
+			}
+			while(positions[k]-positions[far]>=MAXDISTANCECONSTANT*3)
+			{
+				windowsum-=positions[far];
+				far++;
+			}
+			for(j=k-1;j>=near;j--)
+			{
+				dist = positions[k]-positions[j];
+				intcounts[dist]++;
+			}
+			farcount+=near-far;
+			fardistsum+=(long long)(near-far)*positions[k]-windowsum;
+			if(far>bucketstart[t])
+			{
+				farcount++;
+				fardistsum+=positions[k]-positions[far-1];
+			}
 		}
 	}
+	for(i=0;i<length;i++) counts[i]=intcounts[i];
+	free(intcounts);
 
 	/* compute slope using least-square regression */
 	xysum=xsum=ysum=x2sum=0.0;
@@ -2466,6 +2531,8 @@ int GetTopPeriods(unsigned char* pattern, int length, int* toparray)
 		ysum += (counts[i]);
 		x2sum += (i*i);
 	}
+	xysum += (double)fardistsum;
+	ysum += (double)farcount;
 	n = end;
 	s = (n*xysum-xsum*ysum)/(n*x2sum-xsum*xsum);
 
@@ -2500,7 +2567,7 @@ int GetTopPeriods(unsigned char* pattern, int length, int* toparray)
 
 	/* free memory */
 	free(counts);
-	free(history);
+	free(positions);
 
 	return 0;
 }
@@ -3960,6 +4027,9 @@ void newtupbo(void)
 	int found,progbarpos,percentincrease,onepercent;
 	double oldcopynumber;
 	int pass_multiples_test;
+	int maxcandidate;
+	/* nonzero for what strchr("acgtACGT",c) finds, which includes '\0' */
+	char isacgt[256];
 
 	/* Moved here by Yozen on Feb 16, 2016.
 	Always initialize here. Freed at the end of this function.
@@ -4000,6 +4070,23 @@ void newtupbo(void)
 
 	Sortmultiples=(int *)calloc(MAXDISTANCE+1,sizeof(int));
 
+	/* With a small MaxPeriod (RepeatMasker runs TRF with 10 and 7), test only
+	   candidate distances up to SMALLDISTANCE.  This cannot change how those
+	   candidates are tested: a distance up to SMALLDISTANCE is tested against
+	   itself alone (lo_d_range==hi_d_range==d), the distanceseen array is
+	   kept per distance, and the best period list is only consulted for
+	   distances above 250.  The candidates skipped are the larger distances,
+	   whose repeats have not been seen to come out with a period below 13, so
+	   RemoveBySize() would drop them; skipping them saves their wide
+	   alignments.  In the HTML output, the running count in the labels and
+	   blank lines left where CleanAlignments() drops repeats can change.
+	   -noprune tests every distance. */
+	maxcandidate=MAXDISTANCE;
+	if((!paramset.noprune)&&(MaxPeriod<=PRUNEMAXPERIOD)) maxcandidate=SMALLDISTANCE;
+
+	memset(isacgt,0,sizeof(isacgt));
+	for(g=0;g<=8;g++) isacgt[(unsigned char)"acgtACGT"[g]]=1;
+
 	build_entire_code=1;
 
 	onepercent = Length/100;
@@ -4017,7 +4104,7 @@ void newtupbo(void)
 			if (paramset.ngs != 1) SetProgressBar();
 		}
 		if((i==0)  /* before start of sequence or */
-				||(strchr("acgtACGT",Sequence[i])==NULL))  /* not one of A,C,G,T */
+				||(!isacgt[Sequence[i]]))  /* not one of A,C,G,T */
 		{
 			badcharindex=i;
 			build_entire_code=1;
@@ -4026,7 +4113,7 @@ void newtupbo(void)
 			while((g<mintuplesize)&&(i<Length))
 			{
 				i++;
-				if(strchr("acgtACGT",Sequence[i])==NULL)
+				if(!isacgt[Sequence[i]])
 				{
 					badcharindex=i;
 					g=0;
@@ -4047,19 +4134,21 @@ void newtupbo(void)
 		}
 		else
 		{
-			code=(code%four_to_the[Tuplesize[NTS]-1])
+			/* code is never negative, so % by a power of 4 is a mask */
+			code=(code&(four_to_the[Tuplesize[NTS]-1]-1))
 				*4+Index[Sequence[i]];
 		}
 		Tuplecode[NTS]=code;
 		for(h=NTS-1;h>=1;h--)
 		{
-			Tuplecode[h]=code%four_to_the[Tuplesize[h]];
+			Tuplecode[h]=code&(four_to_the[Tuplesize[h]]-1);
 		}
 
 		/* process index i using all the tuplesizes */
 
 		g=1;
-		while((g<=NTS)&&(i-badcharindex>=Tuplesize[g]))
+		/* tuple sizes whose matches are all beyond maxcandidate are skipped */
+		while((g<=NTS)&&(i-badcharindex>=Tuplesize[g])&&(Tuplemaxdistance[g-1]<maxcandidate))
 		{
 
 			/* change 5/25/99 ends here */
@@ -4105,7 +4194,7 @@ void newtupbo(void)
 					/* is this a distance that is too small for the tuplesize? */
 					/* recall that the History lists do not exclude distance */
 					/* that are too short, only those that are too long  */
-					if(d>Tuplemaxdistance[g-1])
+					if((d>Tuplemaxdistance[g-1])&&(d<=maxcandidate))
 					{
 						/* add tuplematch to Distance */
 						add_tuple_match_to_Distance_entry(i,Tuplesize[g],d,Distance);

@@ -178,6 +178,7 @@ Where: (all weights, penalties, and scores are positive)
         -d        data file
         -h        suppress html output
         -r        no redundancy elimination
+        -noprune  with MaxPeriod <= 10, also test candidate periods above 20 (slower)
         -l <n>    maximum TR length expected (in millions) (eg, -l 3 or -l=3 for 3 million)
 ```
 Note the sequence file should be in FASTA format:
@@ -202,6 +203,7 @@ The following is a more detailed description of the **parameters**:
 - **-f:** If this option is present, flanking sequence around each repeat is recorded in the alignment file. This may be useful for PCR primer determination. Flanking sequence consists of the 500 nucleotides on each side of a repeat.
 - **-d:** A data file is produced if this option is present. This file is a text file which contains the same information, in the same order, as the summary table file, plus consensus pattern and repeat sequences. This file contains no labeling and is suitable for additional processing, for example with a perl script, outside of the program.
 - **-h:** suppress HTML output (this automatically switches -d to ON)
+- **-noprune:** When MaxPeriod is 10 or less (RepeatMasker runs TRF with MaxPeriods of 10 and 7), TRF only tests candidate periods up to 20, which is several times faster. Repeats found from larger candidates have come out with periods of 13 or more in all our tests, so they would be dropped anyway, and the repeats reported have been identical. In the HTML output, the running count that ends each repeat's label, and blank lines at the end of the alignment file, can differ. This option tests every candidate period, as before.
 - **-l \<n\>:** Specifies that the longest TR array expected in the input is at most n million bp long. The default is 2 (for 2 million). Setting this option too high may result in an error message if you did not have enough available memory. We have only tested this option up to value 29.
 - **-u:** Prints the help/usage message above
 - **-v:** Prints the version information
